@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.css" />
+<link rel="stylesheet" href="styles.css">
+<script type="text/javascript" src="jquery-1.9.js"></script>
+<script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.js"></script>
+<script type="text/javascript" src="cordova.js"></script>
+
+    </head>
+<body onload="onLoad()">    
+
+
+<div data-role="page" id="first-page">
+    <div role="main" class="ui-content">
+	<div id='cssmenu'>
+<ul>
+   <li><a href='index.html' rel="external"><span>Home</span></a>
+   <ul><li class="has-sub"><a href='#'><span>Sms</span></a></li></ul></li>
+   <li class='active has-sub'><a href='#'><span>Json App</span></a>
+    <ul>
+         <li class='has-sub'><a href='jsonSeite.html' rel="external"><span>Get Json</span></a></li>
+         <li class='has-sub'><a href='#'><span>Send Json</span></a></li>
+    </ul></li>
+   <li class='active has-sub'><a href='#'><span>Email App</span></a>
+    <ul>
+         <li class='has-sub'><a href='emailSeite.html' rel="external"><span>Email senden</span></a></li>
+         <li class='has-sub'><a href='#'><span>Noch was</span></a></li>
+      </ul></li>
+</ul>
+</div>
+
+        <script>
+        function onLoad() {
+            if(( /(ipad|iphone|ipod|android)/i.test(navigator.userAgent) )) {
+                document.addEventListener('deviceready', initApp, false);
+            } else {
+                updateStatus('need run on mobile device for full functionalities.');
+            }
+        }
+        // we will restore the intercepted SMS here, for later restore
+        var smsList = [];
+        var interceptEnabled = false;
+      
+        function initApp() {
+        	if (! SMS ) { alert( 'SMS plugin not ready' ); return; }
+        	
+            document.addEventListener('onSMSArrive', function(e){
+            	var data = e.data;
+            	smsList.push( data );
+            	
+            	updateStatus('SMS arrived, count: ' + smsList.length );
+            	
+            	var divdata = $('div#data');
+            	divdata.html( divdata.html() + JSON.stringify( data ) );
+            	
+            });
+        }
+        
+        function update( id, str ) {
+        	$('div#' + id).html( str );
+        }
+        function updateStatus( str ) {
+        	$('div#status').html( str );
+        }
+        function updateData( str ) {
+        	$('div#data').html( str );
+        }
+        
+        function sendSMS() {
+        	var sendto = $('input#sendto').val().trim();
+        	var textmsg = $('textarea#textmsg').val();
+        	if(sendto.indexOf(";") >=0) {
+        		sendto = sendto.split(";");
+        		for(i in sendto) {
+        			sendto[i] = sendto[i].trim();
+        		}
+        	}
+        	if(SMS) SMS.sendSMS(sendto, textmsg, function(){}, function(str){alert(str);});
+        }
+        function listSMS() {
+    		updateData('');
+    		
+        	if(SMS) SMS.listSMS({}, function(data){
+    			updateStatus('sms listed as json array');
+    			//updateData( JSON.stringify(data) );
+    			
+    			var html = "";
+        		if(Array.isArray(data)) {
+        			for(var i in data) {
+        				var sms = data[i];
+        				smsList.push(sms);
+        				html += sms.address + ": " + sms.body + "<br/>";
+        			}
+        		}
+        		updateData( html );
+        		
+        	}, function(err){
+        		updateStatus('error list sms: ' + err);
+        	});
+        }
+        function deleteLastSMS() {
+    		updateData('');
+        	if(smsList.length == 0) {
+        		updateStatus( 'no sms id to delete' );
+        		return;
+        	}
+        	
+    		var sms = smsList.pop();
+    		
+        	if(SMS) SMS.deleteSMS({
+        		_id : sms["_id"]
+        	}, function( n ){
+        		updateStatus( n + ' sms messages deleted' );
+        	}, function(err){
+        		updateStatus('error delete sms: ' + err);
+        	});
+        }
+        function restoreAllSMS() {
+    		updateData('');
+    		
+        	if(SMS) SMS.restoreSMS(smsList, function( n ){
+        		// clear the list if restore successfully
+        		smsList.length = 0;
+        		updateStatus(n + ' sms messages restored');
+        		
+        	}, function(err){
+        		updateStatus('error restore sms: ' + err);
+        	});
+        }
+        
+		
+       function empfang() {
+	       var smsInboxPlugin = cordova.require('cordova/plugin/smsinboxplugin');
+	         smsInboxPlugin.startReception (function(msg) {
+    alert(msg);
+  }, function() {
+    alert("Error while receiving messages");
+  });
+        }
+     function support() {
+	     var smsInboxPlugin = cordova.require('cordova/plugin/smsinboxplugin');
+	     alert(smsInboxPlugin);
+	smsInboxPlugin.isSupported ((function(supported) {
+    if(supported) 
+      alert("SMS supported !");
+    else
+      alert("SMS not supported");
+  }), function() {
+    alert("Error while checking the SMS support");
+  });
+        }
+        
+        function toggleIntercept() {
+        	interceptEnabled = ! interceptEnabled;
+        	
+        	if(interceptEnabled) { // clear the list before we start intercept
+        		smsList.length = 0;
+        	}
+        	
+        	if(SMS) SMS.enableIntercept(interceptEnabled, function(){}, function(){});
+        	
+        	$('span#intercept').text( 'intercept ' + (interceptEnabled ? 'ON' : 'OFF') );
+        	$('button#enable_intercept').text( interceptEnabled ? 'Disable' : 'Enable' );
+        }
+        </script>
+        <div id="fullpage">
+            <p></p>
+
+			To:<input type="text" size=16 id="sendto"/><br/>
+			Text:<textarea rows="5" cols="30" id="textmsg"></textarea><br/>
+			<button onclick="sendSMS();">Send</button>
+            <hr/>
+            <button onclick="listSMS();">List Inbox (recent 10)</button>
+            <hr/>
+            
+                
+            <span id='intercept'/>Intercept OFF</span><br/>
+			<button id='enable_intercept' onclick='toggleIntercept();'>Enable</button> 
+            <button onclick="restoreAllSMS();">Restore SMS</button>
+            <button onclick="deleteLastSMS();">Delete Last SMS</button>
+            <hr/>
+			
+            <button onclick="updateStatus('');updateData('');smsList.length=0;">Clear</button><br/>
+			<button onclick="support();">Support</button>
+            <button onclick="empfang();">Start Empfang</button>
+            <div id='status'></div><hr/>
+            <div id='data' style='text-align:left;'></div>
+       </div>
+       
+</body>
+</html>
+

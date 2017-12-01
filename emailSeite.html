@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="jquery.mobile-1.4.5/jquery.mobile-1.4.5.min.css" />
+<link rel="stylesheet" href="styles.css">
+<script type="text/javascript" src="jquery-1.9.js"></script>
+<script src="jquery.mobile-1.4.5/jquery.mobile-1.4.5.js"></script>
+<script type="text/javascript" src="cordova.js"></script>
+        <style type="text/css">
+            body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; background-color:gray; color:white; }
+            div#fullpage { width:100%; height:100%; margin:0; padding:0; border:0px solid red; text-align:center; vertical-align:middle; }
+            div#data { width:100%; overflow:scroll; }
+            button { font-size: 18px; }
+            </style>
+    </head>
+    <body onload="onLoad()">
+        <script>
+       document.addEventListener('deviceready', function () {
+    // cordova.plugins.email is now available 
+}, false);
+        
+        
+       cordova.plugins.email.isAvailable(
+    function (isAvailable) {
+        if(!isAvailable) { alert('Service is not available');} 
+    }
+);
+        
+        function sendSMS() {
+        	cordova.plugins.email.open({
+    to:      'max@mustermann.de',
+    cc:      'erika@mustermann.de',
+    bcc:     ['john@doe.com', 'jane@doe.com'],
+    subject: 'Greetings',
+    body:    'How are you? Nice greetings from Leipzig'
+});
+        }
+       
+        </script>
+		<div data-role="page" id="first-page">
+    <div role="main" class="ui-content">
+	<div id='cssmenu'>
+<ul>
+   <li><a href='index.html' rel="external"><span>Home</span></a>
+   <ul><li class="has-sub"><a href='#'><span>Sms</span></a></li></ul></li>
+   <li class='active has-sub'><a href='#'><span>Json App</span></a>
+    <ul>
+         <li class='has-sub'><a href='jsonSeite.html' rel="external"><span>Get Json</span></a></li>
+         <li class='has-sub'><a href='#'><span>Send Json</span></a></li>
+    </ul></li>
+   <li class='active has-sub'><a href='#'><span>Email App</span></a>
+    <ul>
+         <li class='has-sub'><a href='emailSeite.html' rel="external"><span>Email senden</span></a></li>
+         <li class='has-sub'><a href='#'><span>Noch was</span></a></li>
+      </ul></li>
+</ul>
+</div>
+        <div id="fullpage">
+            <p>E-Mail Plugin</p>
+
+			
+			<button onclick="sendSMS();">Send</button>
+           
+            
+       </div>
+    </body>
+</html>
